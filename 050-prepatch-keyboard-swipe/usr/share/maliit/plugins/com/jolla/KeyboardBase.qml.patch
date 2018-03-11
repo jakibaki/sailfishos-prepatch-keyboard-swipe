@@ -1,0 +1,98 @@
+--- /usr/share/maliit/plugins/com/jolla/KeyboardBase.qml	2018-02-02 09:16:16.000000000 +0100
++++ /home/nemo/patches/KeyboardBase.qml	2018-03-11 18:58:45.359705828 +0100
+@@ -67,6 +67,9 @@
+     property int characterKeyCounter
+     property bool closeSwipeActive
+     property int closeSwipeThreshold: Math.max(height*.3, Theme.itemSizeSmall)
++    property bool cursorSwipeActive
++    property int cursorSwipeThreshold: Theme.itemSizeSmall/8
++    property int cursorSwipeStart: Theme.itemSizeSmall
+ 
+     property QtObject emptyAttributes: Item {
+         property bool isShifted
+@@ -186,6 +189,7 @@
+         }
+ 
+         closeSwipeActive = true
++        cursorSwipeActive = false
+         silenceFeedback = false
+         pressTimer.start()
+ 
+@@ -230,7 +234,54 @@
+             } else {
+                 silenceFeedback = false
+             }
++            if (!popper.expanded){
++                if (ActivePoints.array.length === 1
++                && (point.x - point.startX > cursorSwipeThreshold)) {
++                    // swiped right
++                    if(!cursorSwipeActive && (point.x - point.startX > cursorSwipeStart)) {
++                        cursorSwipeActive = true
++                    }
++                    if(cursorSwipeActive){
++                        MInputMethodQuick.sendKey(Qt.Key_Right)
++                        if (point.pressedKey) {
++                            inputHandler._handleKeyRelease()
++                            point.pressedKey.pressed = false
++                        }
++                        lastPressedKey = null
++                        pressTimer.stop()
++                        languageSwitchTimer.stop()
++
++                        point.startX = point.x
++                        return
++                    }
++                }
++
++
++
++
++                if (ActivePoints.array.length === 1
++                    && (point.startX - point.x > cursorSwipeThreshold)) {
++                    // swiped left
++                    if(!cursorSwipeActive && (point.startX - point.x > cursorSwipeStart)){
++                        cursorSwipeActive = true
++                    }
++                    if(cursorSwipeActive){
++                    
++                        MInputMethodQuick.sendKey(Qt.Key_Left)
++
++                        if (point.pressedKey) {
++                            inputHandler._handleKeyRelease()
++                            point.pressedKey.pressed = false
++                        }
++                        lastPressedKey = null
++                        pressTimer.stop()
++                        languageSwitchTimer.stop()
+ 
++                        point.startX = point.x
++                        return
++                    }
++                }
++            }
+             if (popper.expanded && point.pressedKey === lastPressedKey) {
+                 popper.setActiveCell(point.x, point.y)
+             } else {
+@@ -241,6 +292,12 @@
+ 
+     function updatePressedKey(point) {
+         var key = keyAt(point.x, point.y)
++        if(cursorSwipeActive) {
++            inputHandler._handleKeyRelease()
++            point.pressedKey.pressed = false
++            return
++        }
++
+         if (point.pressedKey === key)
+             return
+ 
+@@ -305,7 +362,8 @@
+                 popper.release()
+                 point.pressedKey.pressed = false
+             } else {
+-                triggerKey(point.pressedKey)
++                if(!cursorSwipeActive)
++                    triggerKey(point.pressedKey)
+             }
+ 
+             if (point.pressedKey.keyType !== KeyType.ShiftKey && !isPressed(KeyType.DeadKey)) {
