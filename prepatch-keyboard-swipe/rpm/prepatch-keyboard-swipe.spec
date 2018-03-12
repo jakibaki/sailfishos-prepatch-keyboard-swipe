@@ -3,12 +3,12 @@ Name:       prepatch-keyboard-swipe
 BuildArch: noarch
 
 Summary:    A prepatch-patch which allows you to move the cursor by swiping on the keyboard
-Version:    0.1.0
+Version:    0.1.1
 Release:    1
 Group:      Qt/Qt
 License:    Other
 Source0:    %{name}-%{version}.tar.bz2
-Requires:   patch
+Requires:   patch prepatch
 
 %description
 A prepatch-patch which allows you to move the cursor by swiping on the keyboard
